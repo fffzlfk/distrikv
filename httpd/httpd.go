@@ -2,40 +2,30 @@ package httpd
 
 import (
 	"fmt"
-	"hash/fnv"
 	"io"
 	"net/http"
 
+	"github.com/fffzlfk/distrikv/config"
 	"github.com/fffzlfk/distrikv/db"
 )
 
 // Server contains HTTP method handlers to be used for the database
 type Server struct {
-	db         *db.Database
-	shardIndex int
-	shardCount int
-	addrs      map[int]string
+	db     *db.Database
+	shards *config.Shards
 }
 
 // NewServer creates a new Server instance with HTTP handlers
-func NewServer(db *db.Database, shardIndex, shardCount int, addrs map[int]string) *Server {
+func NewServer(db *db.Database, shards *config.Shards) *Server {
 	return &Server{
-		db:         db,
-		shardIndex: shardIndex,
-		shardCount: shardCount,
-		addrs:      addrs,
+		db:     db,
+		shards: shards,
 	}
 }
 
-func (s *Server) getShard(key string) int {
-	h := fnv.New64()
-	h.Write([]byte(key))
-	return int(h.Sum64() % uint64(s.shardCount))
-}
-
 func (s *Server) redirect(w http.ResponseWriter, r *http.Request, shard int) {
-	url := "http://" + s.addrs[shard] + r.RequestURI
-	fmt.Fprintf(w, "redirecting from shard %d at shard %d\n (%q)\n", s.shardIndex, shard, url)
+	url := "http://" + s.shards.Addrs[shard] + r.RequestURI
+	fmt.Fprintf(w, "redirecting from shard %d at shard %d\n (%q)\n", s.shards.Index, shard, url)
 
 	resp, err := http.Get(url)
 	if err != nil {
@@ -52,15 +42,15 @@ func (s *Server) redirect(w http.ResponseWriter, r *http.Request, shard int) {
 func (s *Server) GetHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	key := r.Form.Get("key")
-	shard := s.getShard(key)
+	shard := s.shards.GetIndex(key)
 
-	if shard != s.shardIndex {
+	if shard != s.shards.Index {
 		s.redirect(w, r, shard)
 		return
 	}
 
 	value, err := s.db.GetKey(key)
-	fmt.Fprintf(w, "shard=%d current-shard=%d addr=%q value=%q error = %v\n", shard, s.shardIndex, s.addrs[shard], value, err)
+	fmt.Fprintf(w, "shard=%d current-shard=%d addr=%q value=%q error = %v\n", shard, s.shards.Index, s.shards.Addrs[shard], value, err)
 }
 
 // SetHandler
@@ -68,15 +58,15 @@ func (s *Server) SetHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	key := r.Form.Get("key")
 	value := r.Form.Get("value")
-	shard := s.getShard(key)
+	shard := s.shards.GetIndex(key)
 
-	if shard != s.shardIndex {
+	if shard != s.shards.Index {
 		s.redirect(w, r, shard)
 		return
 	}
 
 	err := s.db.SetKey(key, []byte(value))
-	fmt.Fprintf(w, "shard=%d current-shard=%d error = %v\n", shard, s.shardIndex, err)
+	fmt.Fprintf(w, "shard=%d current-shard=%d addr=%q error = %v\n", shard, s.shards.Index, s.shards.Addrs[shard], err)
 }
 
 func (s *Server) ListenAndServe(addr string) error {

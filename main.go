@@ -36,26 +36,17 @@ func init() {
 
 func main() {
 
-	config, err := config.ParseFile(*configFileName)
+	cfg, err := config.ParseFile(*configFileName)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	shardCount := len(config.Shards)
-	shardIndex := -1
-	addrs := make(map[int]string)
-
-	for _, v := range config.Shards {
-		addrs[v.Index] = v.Address
-		if v.Name == *shard {
-			shardIndex = v.Index
-		}
-	}
-	if shardIndex < 0 {
-		log.Fatalf("Shard %q was not found", *shard)
+	shards, err := config.ParseShards(cfg.Shards, *shard)
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	fmt.Printf("Shard count = %d, current shard: %d\n", shardCount, shardIndex)
+	fmt.Printf("Shard count = %d, current shard: %d\n", shards.Count, shards.Index)
 
 	db, close, err := db.NewDatabase(*dbLocation)
 	if err != nil {
@@ -63,7 +54,7 @@ func main() {
 	}
 	defer close()
 
-	server := httpd.NewServer(db, shardIndex, shardCount, addrs)
+	server := httpd.NewServer(db, shards)
 
 	http.HandleFunc("/get", server.GetHandler)
 
