@@ -10,14 +10,18 @@ import (
 )
 
 func createConfig(t *testing.T, contents string) *config.Config {
+	t.Helper()
+
 	f, err := ioutil.TempFile(os.TempDir(), "config.toml")
 	if err != nil {
 		t.Fatalf("cound not create temp file: %v", err)
 	}
-	defer f.Close()
 
 	name := f.Name()
-	defer os.Remove(name)
+	t.Cleanup(func() {
+		f.Close()
+		os.Remove(name)
+	})
 
 	if _, err = f.WriteString(contents); err != nil {
 		t.Fatalf("cound not write contents: %v", err)

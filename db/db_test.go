@@ -15,8 +15,10 @@ func TestGetSet(t *testing.T) {
 		t.Fatal("could not create temp file:", err)
 	}
 	name := f.Name()
-	f.Close()
-	defer os.Remove(name)
+	t.Cleanup(func() {
+		f.Close()
+		os.Remove(name)
+	})
 
 	db, closeFunc, err := db.NewDatabase(name)
 	if err != nil {
