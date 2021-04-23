@@ -17,6 +17,7 @@ var (
 	httpAddr       = flag.String("http-addr", "", "set-addr")
 	configFileName = flag.String("config-file", "sharding.toml", "set-config-file")
 	shard          = flag.String("shard", "", "select the shard")
+	replica        = flag.Bool("replica", false, "whether or not run as a replica")
 )
 
 func init() {
@@ -35,7 +36,6 @@ func init() {
 }
 
 func main() {
-
 	cfg, err := config.ParseFile(*configFileName)
 	if err != nil {
 		log.Fatal(err)
@@ -48,7 +48,7 @@ func main() {
 
 	fmt.Printf("Shard count = %d, current shard: %d\n", shards.Count, shards.Index)
 
-	db, close, err := db.NewDatabase(*dbLocation)
+	db, close, err := db.NewDatabase(*dbLocation, *replica)
 	if err != nil {
 		log.Fatalf("NewDataBase(%q): %v", *dbLocation, err)
 	}
@@ -59,6 +59,12 @@ func main() {
 	http.HandleFunc("/get", server.GetHandler)
 
 	http.HandleFunc("/set", server.SetHandler)
+
+	http.HandleFunc("/purge", server.DeleteExtraKeysHandler)
+
+	http.HandleFunc("/next-replication-key", server.GetNextForReplicationHandler)
+
+	http.HandleFunc("/delete-replication-key", server.DeleteReplicationKeyHandler)
 
 	// hash(key) % count = <current index>
 

@@ -25,7 +25,7 @@ func createShardDb(t *testing.T, index int) *db.Database {
 	name := tempFile.Name()
 	t.Cleanup(func() { os.Remove(name) })
 
-	db, closeFunc, err := db.NewDatabase(name)
+	db, closeFunc, err := db.NewDatabase(name, false)
 	if err != nil {
 		t.Fatal("could not create a new database:", db)
 	}
