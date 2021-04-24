@@ -8,6 +8,7 @@ import (
 
 	"github.com/fffzlfk/distrikv/config"
 	"github.com/fffzlfk/distrikv/db"
+	"github.com/fffzlfk/distrikv/replication"
 )
 
 // Server contains HTTP method handlers to be used for the database
@@ -78,16 +79,10 @@ func (s *Server) DeleteExtraKeysHandler(w http.ResponseWriter, r *http.Request) 
 	}))
 }
 
-type NextKeyValue struct {
-	Key   string
-	Value string
-	Err   error
-}
-
 func (s *Server) GetNextForReplicationHandler(w http.ResponseWriter, r *http.Request) {
 	enc := json.NewEncoder(w)
 	k, v, err := s.db.GetNextForReplication()
-	enc.Encode(NextKeyValue{
+	enc.Encode(replication.NextKeyValue{
 		Key:   string(k),
 		Value: string(v),
 		Err:   err,

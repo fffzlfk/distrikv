@@ -19,5 +19,5 @@ replicas = "127.0.0.44:8080"
 [[shards]]
 name = "Hangzhou"
 index = 3
-address = "127.0.0.5:8083"
+address = "127.0.0.5:8080"
 replicas = "127.0.0.55:8080"

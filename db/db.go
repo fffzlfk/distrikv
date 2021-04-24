@@ -60,6 +60,15 @@ func (d *Database) SetKey(key string, value []byte) error {
 	})
 }
 
+// SetKeyOnReplica set the key to the requested value into default database
+// and does not write to the replication queue
+// this method is only for replicas
+func (d *Database) SetKeyOnReplica(key string, value []byte) error {
+	return d.db.Update(func(t *bolt.Tx) error {
+		return t.Bucket(defaultBucket).Put([]byte(key), value)
+	})
+}
+
 // SetKey gets the value of the requested from a default database
 func (d *Database) GetKey(key string) (res []byte, err error) {
 	err = d.db.View(func(t *bolt.Tx) error {

@@ -8,6 +8,7 @@ import (
 
 	"github.com/fffzlfk/distrikv/config"
 	"github.com/fffzlfk/distrikv/db"
+	"github.com/fffzlfk/distrikv/replication"
 
 	"github.com/fffzlfk/distrikv/httpd"
 )
@@ -53,6 +54,15 @@ func main() {
 		log.Fatalf("NewDataBase(%q): %v", *dbLocation, err)
 	}
 	defer close()
+
+	// replication
+	if *replica {
+		masterAddrs, has := shards.Addrs[shards.Index]
+		if !has {
+			log.Fatal("master dose not exist:", err)
+		}
+		go replication.ClientLoop(db, masterAddrs)
+	}
 
 	server := httpd.NewServer(db, shards)
 
