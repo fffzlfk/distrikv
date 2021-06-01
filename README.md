@@ -1,25 +1,42 @@
-## Description
+<h1 align="center">Welcome to distributed-key-value 👋</h1>
+<p>
+  <a href="https://twitter.com/fffzlfk" target="_blank">
+    <img alt="Twitter: fffzlfk" src="https://img.shields.io/twitter/follow/fffzlfk.svg?style=social" />
+  </a>
+</p>
 
-a simple distributed key value store in golang.
+> A simple distributed key value store in golang
 
-### Dependency
+## Main idea
 
-### Main idea
+### SetKey & GetKey
 
-#### SetKey & GetKey
-Using `hash(key)` to get the index, if that is not euqal to current index, then redirecting to the index-matched server
+Using hash(key) to get the index, if that is not euqal to current index, then redirecting to the index-matched server
 
-
-#### Replication
-
+### Replication
 Created a Queue on the Masters, this queue stores key-values that have not yet been written to replicas, Slaves loop get datas from the queue and delete them from Master.
+
+## Usage
+
+```sh
+./launsh.sh
+```
 
 ### Configuration
 
-`sharding.toml`
+[sharding.toml](./sharding.toml)
 
-### Use
+## Author
 
-```bash
-./launch.sh
-```
+👤 **fffzlfk**
+
+* Website: [fffzlfk.netlify.app](https://fffzlfk.netlify.app)
+* Twitter: [@fffzlfk](https://twitter.com/fffzlfk)
+* Github: [@fffzlfk](https://github.com/fffzlfk)
+
+## Show your support
+
+Give a ⭐️ if this project helped you!
+
+***
+_This README was generated with ❤️ by [readme-md-generator](https://github.com/kefranabg/readme-md-generator)_
