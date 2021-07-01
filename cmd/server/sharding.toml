@@ -1,0 +1,23 @@
+[[shards]]
+name = "Beijing"
+index = 0
+address = "localhost:8011"
+replicas = "localhost:8012"
+
+[[shards]]
+name = "Shanghai"
+index = 1
+address = "localhost:8021"
+replicas = "localhost:8022"
+
+[[shards]]
+name = "Xian"
+index = 2
+address = "localhost:8031"
+replicas = "localhost:8032"
+
+[[shards]]
+name = "Hangzhou"
+index = 3
+address = "localhost:8041"
+replicas = "localhost:8042"
