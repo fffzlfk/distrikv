@@ -70,6 +70,8 @@ func main() {
 
 	http.HandleFunc("/set", server.SetHandler)
 
+	http.HandleFunc("/delete", server.DeleteHandler)
+
 	http.HandleFunc("/purge", server.DeleteExtraKeysHandler)
 
 	http.HandleFunc("/next-replication-key", server.GetNextForReplicationHandler)

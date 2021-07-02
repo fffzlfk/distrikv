@@ -60,6 +60,11 @@ func (d *Database) SetKey(key string, value []byte) error {
 	})
 }
 
+// DeleteKey deletes the key to the requested value or returns an error
+func (d *Database) DeleteKey(key string) error {
+	return d.SetKey(key, nil)
+}
+
 // SetKeyOnReplica set the key to the requested value into default database
 // and does not write to the replication queue
 // this method is only for replicas
