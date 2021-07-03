@@ -16,18 +16,30 @@ type client struct {
 	addr string
 }
 
-func (c *client) Set(key, value string) {
+func (c *client) do(url string) (*utils.Resp, error) {
 	req := fasthttp.AcquireRequest()
 	resp := fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseRequest(req)
 	defer fasthttp.ReleaseResponse(resp)
-	url := fmt.Sprintf("http://%s/set?key=%s&value=%s", c.addr, key, value)
 	req.SetRequestURI(url)
-	fasthttp.Do(req, resp)
+	err := fasthttp.Do(req, resp)
+	if err != nil {
+		return nil, err
+	}
+
 	bodyBytes := resp.Body()
 	var respObj utils.Resp
 	json.Unmarshal(bodyBytes, &respObj)
-	if respObj.Err == nil {
+	if respObj.Err != nil {
+		return nil, respObj.Err
+	}
+	return &respObj, nil
+}
+
+func (c *client) Set(key, value string) {
+	url := fmt.Sprintf("http://%s/set?key=%s&value=%s", c.addr, key, value)
+	_, err := c.do(url)
+	if err == nil {
 		fmt.Println("ok")
 	} else {
 		fmt.Println("error")
@@ -35,17 +47,9 @@ func (c *client) Set(key, value string) {
 }
 
 func (c *client) Del(key string) {
-	req := fasthttp.AcquireRequest()
-	resp := fasthttp.AcquireResponse()
-	defer fasthttp.ReleaseRequest(req)
-	defer fasthttp.ReleaseResponse(resp)
 	url := fmt.Sprintf("http://%s/delete?key=%s", c.addr, key)
-	req.SetRequestURI(url)
-	fasthttp.Do(req, resp)
-	bodyBytes := resp.Body()
-	var respObj utils.Resp
-	json.Unmarshal(bodyBytes, &respObj)
-	if respObj.Err == nil {
+	_, err := c.do(url)
+	if err == nil {
 		fmt.Println("ok")
 	} else {
 		fmt.Println("error")
@@ -53,20 +57,16 @@ func (c *client) Del(key string) {
 }
 
 func (c *client) Get(key string) {
-	req := fasthttp.AcquireRequest()
-	resp := fasthttp.AcquireResponse()
-	defer fasthttp.ReleaseRequest(req)
-	defer fasthttp.ReleaseResponse(resp)
 	url := fmt.Sprintf("http://%s/get?key=%s", c.addr, key)
-	req.SetRequestURI(url)
-	fasthttp.Do(req, resp)
-	bodyBytes := resp.Body()
-	var respObj utils.Resp
-	json.Unmarshal(bodyBytes, &respObj)
-	if respObj.Value == "" {
+	resp, err := c.do(url)
+	if err != nil {
+		fmt.Println("error")
+		return
+	}
+	if resp.Value == "" {
 		fmt.Println(nil)
 	} else {
-		fmt.Printf("shard %d: %q\n", respObj.CurShard, respObj.Value)
+		fmt.Printf("shard %d: %q\n", resp.CurShard, resp.Value)
 	}
 }
 
