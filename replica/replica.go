@@ -32,20 +32,18 @@ type client struct {
 
 func ClientLoop(db *db.Database, masterAddrs string, action int) {
 	c := client{db: db, masterAddrs: masterAddrs}
-	go func() {
-		for {
-			has, err := c.loop(action)
-			if err != nil {
-				log.Println("could not loop:", err)
-				time.Sleep(time.Second)
-				continue
-			}
-
-			if !has {
-				time.Sleep(time.Millisecond * 100)
-			}
+	for {
+		has, err := c.loop(action)
+		if err != nil {
+			log.Println("could not loop:", err)
+			time.Sleep(time.Second)
+			continue
 		}
-	}()
+
+		if !has {
+			time.Sleep(time.Millisecond * 100)
+		}
+	}
 }
 
 func (c *client) loop(action int) (bool, error) {
