@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"strings"
 
@@ -36,10 +37,16 @@ func (c *client) do(url string) (*utils.Resp, error) {
 	return &respObj, nil
 }
 
+func (c *client) Ping() error {
+	url := fmt.Sprintf("http://%s/ping", c.addr)
+	_, err := c.do(url)
+	return err
+}
+
 func (c *client) Set(key, value string) {
 	url := fmt.Sprintf("http://%s/set?key=%s&value=%s", c.addr, key, value)
-	_, err := c.do(url)
-	if err == nil {
+
+	if _, err := c.do(url); err == nil {
 		fmt.Println("ok")
 	} else {
 		fmt.Println("error")
@@ -48,8 +55,7 @@ func (c *client) Set(key, value string) {
 
 func (c *client) Del(key string) {
 	url := fmt.Sprintf("http://%s/delete?key=%s", c.addr, key)
-	_, err := c.do(url)
-	if err == nil {
+	if _, err := c.do(url); err == nil {
 		fmt.Println("ok")
 	} else {
 		fmt.Println("error")
@@ -71,6 +77,9 @@ func (c *client) Get(key string) {
 }
 
 func (c *client) readInput() {
+	if err := c.Ping(); err != nil {
+		log.Fatal(err)
+	}
 	for {
 		fmt.Printf("%s> ", c.addr)
 		msg, err := bufio.NewReader(os.Stdin).ReadString('\n')

@@ -8,9 +8,9 @@ import (
 
 	"github.com/fffzlfk/distrikv/config"
 	"github.com/fffzlfk/distrikv/db"
-	"github.com/fffzlfk/distrikv/replication"
 
 	"github.com/fffzlfk/distrikv/httpd"
+	"github.com/fffzlfk/distrikv/replica"
 )
 
 var (
@@ -18,7 +18,7 @@ var (
 	httpAddr       = flag.String("http-addr", "", "set-addr")
 	configFileName = flag.String("config-file", "sharding.toml", "set-config-file")
 	shard          = flag.String("shard", "", "select the shard")
-	replica        = flag.Bool("replica", false, "whether or not run as a replica")
+	isReplica      = flag.Bool("replica", false, "whether or not run as a replica")
 )
 
 func init() {
@@ -49,22 +49,25 @@ func main() {
 
 	fmt.Printf("Shard count = %d, current shard: %d\n", shards.Count, shards.Index)
 
-	db, close, err := db.NewDatabase(*dbLocation, *replica)
+	db, close, err := db.NewDatabase(*dbLocation, *isReplica)
 	if err != nil {
 		log.Fatalf("NewDataBase(%q): %v", *dbLocation, err)
 	}
 	defer close()
 
 	// replication
-	if *replica {
+	if *isReplica {
 		masterAddrs, has := shards.Addrs[shards.Index]
 		if !has {
 			log.Fatal("master dose not exist:", err)
 		}
-		go replication.ClientLoop(db, masterAddrs)
+		go replica.ClientLoop(db, masterAddrs, replica.Replication)
+		go replica.ClientLoop(db, masterAddrs, replica.Deleted)
 	}
 
 	server := httpd.NewServer(db, shards)
+
+	http.HandleFunc("/ping", server.PingHandler)
 
 	http.HandleFunc("/get", server.GetHandler)
 
@@ -77,6 +80,10 @@ func main() {
 	http.HandleFunc("/next-replication-key", server.GetNextForReplicationHandler)
 
 	http.HandleFunc("/delete-replication-key", server.DeleteReplicationKeyHandler)
+
+	http.HandleFunc("/next-deleted-key", server.GetNextForDeletedHandler)
+
+	http.HandleFunc("/delete-deleted-key", server.DeleteDeletedKeyHandler)
 
 	// hash(key) % count = <current index>
 
