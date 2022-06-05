@@ -29,7 +29,10 @@ func createShardDb(t *testing.T, index int) *db.Database {
 	if err != nil {
 		t.Fatal("could not create a new database:", db)
 	}
-	t.Cleanup(func() { closeFunc() })
+	t.Cleanup(func() {
+    err := closeFunc()
+    t.Fatal(err)
+  })
 	return db
 }
 

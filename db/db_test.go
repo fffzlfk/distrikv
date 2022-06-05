@@ -50,7 +50,12 @@ func createTempDb(t *testing.T, readOnly bool) *db.Database {
 	if err != nil {
 		t.Fatal("could not create a new database:", db)
 	}
-	t.Cleanup(func() { closeFunc() })
+	t.Cleanup(func() {
+    err := closeFunc()
+    if err != nil {
+      t.Fatal(err)
+    }
+  })
 	return db
 }
 

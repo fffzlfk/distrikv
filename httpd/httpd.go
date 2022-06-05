@@ -38,7 +38,12 @@ func (s *Server) redirect(w http.ResponseWriter, r *http.Request, shard int) {
 	}
 	defer resp.Body.Close()
 
-	io.Copy(w, resp.Body)
+	_, err = io.Copy(w, resp.Body)
+	if err != nil {
+		w.WriteHeader(500)
+		fmt.Fprintf(w, "Internal server error: %v", err)
+		return
+	}
 }
 
 // PingHandler ping the connection
@@ -46,12 +51,22 @@ func (s *Server) PingHandler(w http.ResponseWriter, r *http.Request) {
 	resp := &utils.Resp{
 		Err: nil,
 	}
-	json.NewEncoder(w).Encode(resp)
+	err := json.NewEncoder(w).Encode(resp)
+	if err != nil {
+		w.WriteHeader(500)
+		fmt.Fprintf(w, "Internal server error: %v", err)
+		return
+	}
 }
 
 // GetHandler get the value of key
 func (s *Server) GetHandler(w http.ResponseWriter, r *http.Request) {
-	r.ParseForm()
+	err := r.ParseForm()
+	if err != nil {
+		w.WriteHeader(500)
+		fmt.Fprintf(w, "Internal server error: %v", err)
+		return
+	}
 	key := r.Form.Get("key")
 	shard := s.shards.GetIndex(key)
 
@@ -68,13 +83,23 @@ func (s *Server) GetHandler(w http.ResponseWriter, r *http.Request) {
 		Value:    string(value),
 		Err:      err,
 	}
-	json.NewEncoder(w).Encode(resp)
+	err = json.NewEncoder(w).Encode(resp)
+	if err != nil {
+		w.WriteHeader(500)
+		fmt.Fprintf(w, "Internal server error: %v", err)
+		return
+	}
 	// fmt.Fprintf(w, "shard=%d current-shard=%d addr=%q value=%q error = %v\n", shard, s.shards.Index, s.shards.Addrs[shard], value, err)
 }
 
 // SetHandler puts key-values to db
 func (s *Server) SetHandler(w http.ResponseWriter, r *http.Request) {
-	r.ParseForm()
+	err := r.ParseForm()
+	if err != nil {
+		w.WriteHeader(500)
+		fmt.Fprintf(w, "Internal server error: %v", err)
+		return
+	}
 	key := r.Form.Get("key")
 	value := r.Form.Get("value")
 	shard := s.shards.GetIndex(key)
@@ -84,20 +109,30 @@ func (s *Server) SetHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := s.db.SetKey(key, []byte(value))
+	err = s.db.SetKey(key, []byte(value))
 	resp := &utils.Resp{
 		Shard:    shard,
 		CurShard: s.shards.Index,
 		Addr:     s.shards.Addrs[shard],
 		Err:      err,
 	}
-	json.NewEncoder(w).Encode(resp)
+	err = json.NewEncoder(w).Encode(resp)
+	if err != nil {
+		w.WriteHeader(500)
+		fmt.Fprintf(w, "Internal server error: %v", err)
+		return
+	}
 	// fmt.Fprintf(w, "shard=%d current-shard=%d addr=%q error = %v\n", shard, s.shards.Index, s.shards.Addrs[shard], err)
 }
 
 // DeleteHandler deletes key-values to db
 func (s *Server) DeleteHandler(w http.ResponseWriter, r *http.Request) {
-	r.ParseForm()
+	err := r.ParseForm()
+	if err != nil {
+		w.WriteHeader(500)
+		fmt.Fprintf(w, "Internal server error: %v", err)
+		return
+	}
 	key := r.Form.Get("key")
 	shard := s.shards.GetIndex(key)
 
@@ -106,19 +141,29 @@ func (s *Server) DeleteHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := s.db.DeleteKey(key)
+	err = s.db.DeleteKey(key)
 	resp := &utils.Resp{
 		Shard:    shard,
 		CurShard: s.shards.Index,
 		Addr:     s.shards.Addrs[shard],
 		Err:      err,
 	}
-	json.NewEncoder(w).Encode(resp)
+	err = json.NewEncoder(w).Encode(resp)
+	if err != nil {
+		w.WriteHeader(500)
+		fmt.Fprintf(w, "Internal server error: %v", err)
+		return
+	}
 }
 
 // DeleteExtraKeysHandler
 func (s *Server) DeleteExtraKeysHandler(w http.ResponseWriter, r *http.Request) {
-	r.ParseForm()
+	err := r.ParseForm()
+	if err != nil {
+		w.WriteHeader(500)
+		fmt.Fprintf(w, "Internal server error: %v", err)
+		return
+	}
 	fmt.Fprintf(w, "Error = %v", s.db.DeleteExtraKeys(func(key string) bool {
 		return s.shards.GetIndex(key) != s.shards.Index
 	}))
@@ -128,17 +173,27 @@ func (s *Server) genNextHandler(bucket []byte) func(w http.ResponseWriter, r *ht
 	return func(w http.ResponseWriter, r *http.Request) {
 		enc := json.NewEncoder(w)
 		k, v, err := s.db.GetNextForReplicationOrDelete(bucket)
-		enc.Encode(replica.NextKeyValue{
+		err = enc.Encode(replica.NextKeyValue{
 			Key:   string(k),
 			Value: string(v),
 			Err:   err,
 		})
+		if err != nil {
+			w.WriteHeader(500)
+			fmt.Fprintf(w, "Internal server error: %v", err)
+			return
+		}
 	}
 }
 
 func (s *Server) genDeleteHandler(bucket []byte) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		r.ParseForm()
+		err := r.ParseForm()
+		if err != nil {
+			w.WriteHeader(500)
+			fmt.Fprintf(w, "Internal server error: %v", err)
+			return
+		}
 		key := r.Form.Get("key")
 		value := r.Form.Get("value")
 
