@@ -53,10 +53,10 @@ func main() {
 	if err != nil {
 		log.Fatalf("NewDataBase(%q): %v", *dbLocation, err)
 	}
-  defer func() {
-    err := close()
-    log.Fatal(err)
-  }()
+	defer func() {
+		err := close()
+		log.Fatal(err)
+	}()
 
 	// replication
 	if *isReplica {

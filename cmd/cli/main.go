@@ -30,10 +30,10 @@ func (c *client) do(url string) (*utils.Resp, error) {
 
 	bodyBytes := resp.Body()
 	var respObj utils.Resp
-  err = json.Unmarshal(bodyBytes, &respObj)
-  if err != nil {
-    return nil, err
-  }
+	err = json.Unmarshal(bodyBytes, &respObj)
+	if err != nil {
+		return nil, err
+	}
 	if respObj.Err != nil {
 		return nil, respObj.Err
 	}

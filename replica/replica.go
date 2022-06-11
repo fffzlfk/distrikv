@@ -62,10 +62,10 @@ func (c *client) loop(action int) (bool, error) {
 	defer resp.Body.Close()
 
 	var res NextKeyValue
-  err = json.NewDecoder(resp.Body).Decode(&res)
-  if err != nil {
-    return false, err
-  }
+	err = json.NewDecoder(resp.Body).Decode(&res)
+	if err != nil {
+		return false, err
+	}
 	if res.Err != nil {
 		return false, res.Err
 	}

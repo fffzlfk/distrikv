@@ -25,10 +25,10 @@ func NewDatabase(dbPath string, readOnly bool) (db *Database, closeFunc func() e
 
 	db = &Database{boltDb, readOnly}
 	if err := db.createDefaultBucket(); err != nil {
-    err := closeFunc()
-    if err != nil {
-      return nil, nil, err
-    }
+		err := closeFunc()
+		if err != nil {
+			return nil, nil, err
+		}
 		return nil, nil, err
 	}
 	return
